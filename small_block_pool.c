@@ -3,6 +3,7 @@
  */
 
 #include "small_block_pool.h"
+#include <string.h> /* for NULL definition */
 
 /* define block status and lead zeros limit */
 #define SMALL_BLOCK_FREE 		0x00
@@ -45,7 +46,7 @@ void *small_block_alloc(pool_info_t *mem){
 	void *ret = NULL;
 
 	/* check memory pool pointer */
-	if(*mem != NULL) {
+	if(mem != NULL) {
 		int delta = SMALL_BLOCK_BMP_LIMIT -
 					small_block_count_lead_zeros(mem->bitmap);
 
@@ -57,7 +58,7 @@ void *small_block_alloc(pool_info_t *mem){
 
 			/* mark as used block */
 			mem->bitmap &= ~(1 << delta);
-			unsigned char *ptr = (unsigned char *)&mem->mem_pool[block_address];
+			uint32_t *ptr = (uint32_t *)&mem->mem_pool[block_address];
 			/* fill the status byte */
 			*ptr++ = (delta | SMALL_BLOCK_USED << 5 );
 
@@ -83,6 +84,7 @@ void small_block_free(pool_info_t *mem, void *p){
 		mem->bitmap |= (1 << bit_position);
 	}
 
+	p = NULL;
 }
 
 
