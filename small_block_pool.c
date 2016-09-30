@@ -54,15 +54,11 @@ void *small_block_alloc(pool_info_t *mem){
 		if(delta >= 0){
 
 			/* obtains its address */
-			int block_address = (mem->block_size + sizeof(uint32_t)) * delta;
+			int block_address = mem->block_size * delta;
 
 			/* mark as used block */
 			mem->bitmap &= ~(1 << delta);
-			uint32_t *ptr = (uint32_t *)&mem->mem_pool[block_address];
-			/* fill the status byte */
-			*ptr++ = (delta | SMALL_BLOCK_USED << 5 );
-
-			ret = (void *)ptr;
+			ret = &mem->mem_pool[block_address];
 		}
 	}
 	/* return the block address */
@@ -74,11 +70,9 @@ void small_block_free(pool_info_t *mem, void *p){
 	/* check pointer */
 	if((p != NULL) && (mem != NULL)) {
 
-		uint32_t *ptr = (uint32_t *)p;
-		uint32_t bit_position = (*(--ptr)) & 0x1F;
-
-		/* here is the true block address */
-		*ptr = 0;
+		uint32_t pbase = (uint32_t)mem->mem_pool;
+		uint32_t palloc = (uint32_t)p;
+		int bit_position = ((palloc - pbase)/mem->block_size) & 0x1F;
 
 		/* mark the newly returned block as free */
 		mem->bitmap |= (1 << bit_position);

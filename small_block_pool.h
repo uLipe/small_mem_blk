@@ -29,7 +29,7 @@ void small_block_free(pool_info_t *mem, void *p);
 
 /* declares a fully initialized memory pool structure */
 #define SMALL_BLOCK_POOL_DECLARE(name, b_size)							\
-	unsigned char pool_##name[(b_size + sizeof(uint32_t)) * 32 ] = {0};	\
+	unsigned char pool_##name[b_size * 32 ] = {0};						\
 	pool_info_t name = {												\
 		.bitmap = 0xFFFFFFFF,											\
 		.block_size = b_size,											\
