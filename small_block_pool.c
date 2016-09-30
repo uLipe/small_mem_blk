@@ -72,10 +72,14 @@ void small_block_free(pool_info_t *mem, void *p){
 
 		uint32_t pbase = (uint32_t)mem->mem_pool;
 		uint32_t palloc = (uint32_t)p;
-		int bit_position = ((palloc - pbase)/mem->block_size) & 0x1F;
+		int bit_position = ((palloc - pbase)/mem->block_size);
 
-		/* mark the newly returned block as free */
-		mem->bitmap |= (1 << bit_position);
+		/* bit position out of range, does not accept the block */
+		if(bit_position >= 0 && bit_position <= 31) {
+			/* mark the newly returned block as free */
+			mem->bitmap |= (1 << bit_position);
+		}
+
 	}
 
 	p = NULL;
