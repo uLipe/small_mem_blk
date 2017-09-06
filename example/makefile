@@ -5,7 +5,7 @@
 CC=gcc
 LD=gcc
 GDB=gdb
-CFLAGS=-g -c -O0 -DPOOL_DEBUG
+CFLAGS= -g -c -O0 -DPOOL_DEBUG
 LDFLAGS=-g  
 OUTFILE?=test_mem
 #

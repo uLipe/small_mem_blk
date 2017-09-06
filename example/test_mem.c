@@ -3,7 +3,7 @@
 #include "../small_block_pool.h"
 
 /* creates several different pools  */
-SMALL_BLOCK_POOL_DECLARE(test1, 32,1024 );
+SMALL_BLOCK_POOL_DECLARE(test1, 32, 512);
 
 
 int main (int argc, char **argv)
@@ -42,14 +42,18 @@ int main (int argc, char **argv)
 
 	/* second test */
 	char *vecstr[1024];
-	for(int i; i < 1024; i++) {
+	for(int i; i < 512; i++) {
 		vecstr[i] = (char *)small_block_alloc(&test1);
-	 	sprintf(vecstr[i], "allocated block %d \n\r", i);
-		printf("%s \n\r", vecstr[i]);		
+		if(vecstr[i] != NULL) {
+	 		sprintf(vecstr[i], "allocated block %d \n\r", i);
+			printf("%s \n\r", vecstr[i]);		
+		} else {
+			printf("failed to allocate memory, no blocks left \n\r");					
+		}
 	}
 
 
-	for(int i; i < 1024; i++) {
+	for(int i; i < 512; i++) {
 		small_block_free(&test1, vecstr[i]);
 	}
 

@@ -11,9 +11,9 @@
 /* defines the structure which controls the memory pool */
 typedef struct {
 	uint32_t bitmap_h;
-	uint32_t bitmap_l[32];
+	uint32_t bitmap_l[16];
 	uint32_t block_size;
-	uint32_t numblocks;
+	uint16_t numblocks;
 	void *mem_pool;
 }pool_info_t;
 
@@ -33,7 +33,7 @@ void small_block_free(pool_info_t *mem, void *p);
 #define SMALL_BLOCK_POOL_DECLARE(name, b_size, __numblocks)				\
 	unsigned char pool_##name[b_size * __numblocks ] = {0};				\
 	pool_info_t name = {												\
-		.bitmap_h = 0xFFFFFFFF,											\
+		.bitmap_h =   0x0000FFFF,										\
 		.bitmap_l[0] = 0xFFFFFFFF,										\
 		.bitmap_l[1] = 0xFFFFFFFF,										\
 		.bitmap_l[2] = 0xFFFFFFFF,										\
@@ -50,25 +50,29 @@ void small_block_free(pool_info_t *mem, void *p);
 		.bitmap_l[13] = 0xFFFFFFFF,										\
 		.bitmap_l[14] = 0xFFFFFFFF,										\
 		.bitmap_l[15] = 0xFFFFFFFF,										\
-		.bitmap_l[16] = 0xFFFFFFFF,										\
-		.bitmap_l[17] = 0xFFFFFFFF,										\
-		.bitmap_l[18] = 0xFFFFFFFF,										\
-		.bitmap_l[19] = 0xFFFFFFFF,										\
-		.bitmap_l[20] = 0xFFFFFFFF,										\
-		.bitmap_l[21] = 0xFFFFFFFF,										\
-		.bitmap_l[22] = 0xFFFFFFFF,										\
-		.bitmap_l[23] = 0xFFFFFFFF,										\
-		.bitmap_l[24] = 0xFFFFFFFF,										\
-		.bitmap_l[25] = 0xFFFFFFFF,										\
-		.bitmap_l[26] = 0xFFFFFFFF,										\
-		.bitmap_l[27] = 0xFFFFFFFF,										\
-		.bitmap_l[28] = 0xFFFFFFFF,										\
-		.bitmap_l[29] = 0xFFFFFFFF,										\
-		.bitmap_l[30] = 0xFFFFFFFF,										\
-		.bitmap_l[31] = 0xFFFFFFFF,										\		
 		.block_size = b_size,											\
 		.numblocks = __numblocks,										\
 		.mem_pool = &pool_##name										\
 	}
+
+
+/*		
+	.bitmap_l[16] = 0xFFFFFFFF,										\
+	.bitmap_l[17] = 0xFFFFFFFF,										\
+	.bitmap_l[18] = 0xFFFFFFFF,										\
+	.bitmap_l[19] = 0xFFFFFFFF,										\
+	.bitmap_l[20] = 0xFFFFFFFF,										\
+	.bitmap_l[21] = 0xFFFFFFFF,										\
+	.bitmap_l[22] = 0xFFFFFFFF,										\
+	.bitmap_l[23] = 0xFFFFFFFF,										\
+	.bitmap_l[24] = 0xFFFFFFFF,										\
+	.bitmap_l[25] = 0xFFFFFFFF,										\
+	.bitmap_l[26] = 0xFFFFFFFF,										\
+	.bitmap_l[27] = 0xFFFFFFFF,										\
+	.bitmap_l[28] = 0xFFFFFFFF,										\
+	.bitmap_l[29] = 0xFFFFFFFF,										\
+	.bitmap_l[30] = 0xFFFFFFFF,										\
+	.bitmap_l[31] = 0xFFFFFFFF,										\		
+*/
 
 #endif /* SMALL_BLOCK_POOL_H_ */

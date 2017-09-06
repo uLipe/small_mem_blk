@@ -83,10 +83,16 @@ void *small_block_alloc(pool_info_t *mem){
 
 	/* check memory pool pointer */
 	if(mem != NULL) {
+		uint32_t x;
+		uint32_t y;
 
-		uint32_t x = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_h);
-		uint32_t y = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_l[x]);			
+		if(mem->bitmap_h) {
+			x = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_h);
+			y = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_l[x]);			
+		}
+
 		uint32_t block_pos = (x << 5) | y;
+
 
 #ifdef POOL_DEBUG
 		printf("%s: h: 0x%X\n\r",__func__,mem->bitmap_h);
