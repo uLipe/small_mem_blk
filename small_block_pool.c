@@ -4,6 +4,8 @@
 
 #include "small_block_pool.h"
 #include <string.h> /* for NULL definition */
+#include <stdint.h>
+#include <stdio.h>
 
 /* define block status and lead zeros limit */
 #define SMALL_BLOCK_FREE 		0x00
@@ -13,31 +15,65 @@
 
 
 
-static int small_block_count_lead_zeros(uint32_t bmp) {
-	int ret = SMALL_BLOCK_BMP_LIMIT + 1;
-
-    const char debruijn_32[32] = {
-        0, 31, 9, 30, 3, 8, 13, 29, 2, 5, 7, 21, 12, 24, 28, 19,
-        1, 10, 4, 14, 6, 22, 25, 20, 11, 15, 23, 26, 16, 27, 17, 18
-    };
 
 
-	if(bmp != 0) {
-		/* extract the zeros of bitmap */
-	    bmp |= bmp>>1;
-	    bmp |= bmp>>2;
-	    bmp |= bmp>>4;
-	    bmp |= bmp>>8;
-	    bmp |= bmp>>16;
-	    bmp++;
+static uint8_t small_block_count_lead_zeros(uint32_t x) {
 
-	    /* use a hacker debrujin table + magic to extract the leading zeros
-	     * quantity
-	     */
-	    ret = debruijn_32[bmp * 0x076be629 >> 27];
-	}
 
-	return(ret);
+	static uint8_t const clz_lkup[] = {
+		32, 31, 30, 30, 29, 29, 29, 29,
+		28, 28, 28, 28, 28, 28, 28, 28
+	};
+
+    uint32_t n;
+	
+    /*
+     * Scan if bit is in top word
+     */
+    if (x >= (1 << 16)) {
+		if (x >= (1 << 24)) {
+			if (x >= (1 << 28)) {
+				n = 28;
+			}
+			else {
+				n = 24;
+			}
+		}
+		else {
+			if (x >= (1 << 20)) {
+				n = 20;
+			}
+			else {
+				n = 16;
+			}
+		}
+    }
+    else {
+        /* now scan if the bit is on rightmost byte */
+		if (x >= (1 << 8)) {
+			if (x >= (1 << 12)) {
+				n = 12;
+			}
+			else {
+				n = 8;
+			}
+		}
+        else {
+            if (x >= (1 << 4)) {
+                n = 4;
+            }
+            else {
+                n = 0;
+            }
+        }
+    }
+
+	uint8_t ret = (uint8_t)(clz_lkup[x >> n] - n);
+
+#ifdef POOL_DEBUG
+	printf("%s: output: %u \n\r", __func__, ret );
+#endif
+	return (ret);
 }
 
 
@@ -47,39 +83,63 @@ void *small_block_alloc(pool_info_t *mem){
 
 	/* check memory pool pointer */
 	if(mem != NULL) {
-		int delta = SMALL_BLOCK_BMP_LIMIT -
-					small_block_count_lead_zeros(mem->bitmap);
+
+		uint32_t x = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_h);
+		uint32_t y = SMALL_BLOCK_BMP_LIMIT - small_block_count_lead_zeros(mem->bitmap_l[x]);			
+		uint32_t block_pos = (x << 5) | y;
+
+#ifdef POOL_DEBUG
+		printf("%s: h: 0x%X\n\r",__func__,mem->bitmap_h);
+		printf("%s: l: 0x%X\n\r",__func__,mem->bitmap_l[x]);
+		printf("%s: x: 0x%X\n\r",__func__,x);
+		printf("%s: y: 0x%X\n\r",__func__,y);
+		printf("%s: block_position: 0x%X\n\r\n\r\n\r",__func__,block_pos);
+#endif
+
 
 		/* at least 1 block is free */
-		if(delta >= 0){
+		if(mem->numblocks){
 
 			/* obtains its address */
-			int block_address = mem->block_size * delta;
+			int block_address = mem->block_size * block_pos;
 
 			/* mark as used block */
-			mem->bitmap &= ~(1 << delta);
+			mem->bitmap_l[x] &= ~(1 << y);
+			if(!mem->bitmap_l[x])
+				mem->bitmap_h &= ~(1 << x);
+				
+			mem->numblocks--;	
 			ret = &mem->mem_pool[block_address];
+
 		}
 	}
 	/* return the block address */
 	return(ret);
 }
 
+
+
 void small_block_free(pool_info_t *mem, void *p){
 
 	/* check pointer */
 	if((p != NULL) && (mem != NULL)) {
+		uint8_t x = 0;
+		uint8_t y = 0;
 
 		uint32_t pbase = (uint32_t)mem->mem_pool;
 		uint32_t palloc = (uint32_t)p;
-		int bit_position = ((palloc - pbase)/mem->block_size);
+		uint32_t block_position = ((palloc - pbase)/mem->block_size);
+
 
 		/* bit position out of range, does not accept the block */
-		if(bit_position >= 0 && bit_position <= 31) {
-			/* mark the newly returned block as free */
-			mem->bitmap |= (1 << bit_position);
-		}
+		if(block_position < 1024) {
+			x = (uint8_t)((block_position >> 5 )& 31);
+			y = (uint8_t)(block_position & 31);
 
+			mem->bitmap_h |= (1 << x);
+			mem->bitmap_l[x] |= 1 << y;
+			mem->numblocks++;
+		}
 	}
 
 	p = NULL;
